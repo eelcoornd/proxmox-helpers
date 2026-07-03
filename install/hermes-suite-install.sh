@@ -59,6 +59,11 @@ $STD sudo -u hermes -H bash -c '
   cd hermes-suite
   sed -i "s/^CONTAINER_RUNTIME=.*/CONTAINER_RUNTIME=docker/" versions.env
   mkdir -p ~/.hermes ~/workspace
+  # ponytail: pre-seed files that ascensionoid/hermes-suite start.sh tries to
+  # cp from /opt/hermes/.env.example (missing in image → crash-loop). Empty
+  # target files short-circuit the cp block. Remove once upstream image ships
+  # the .example files again.
+  touch ~/.hermes/.env ~/.hermes/config.yaml ~/.hermes/SOUL.md
 '
 msg_ok "Cloned Hermes Suite"
 
