@@ -49,6 +49,29 @@ start
 build_container
 description
 
+# ------------------------------------------------------------------------------
+# Optional: set a root password so console/SSH login works.
+# Default access is via `pct enter $CTID` (no password needed) from the host.
+# ------------------------------------------------------------------------------
+if whiptail --title "Root password" --yesno \
+    "Set a root password on CT ${CTID}?\n\nWithout one, log in only via 'pct enter ${CTID}' from the Proxmox host." \
+    10 70; then
+  ROOT_PW=""
+  while [[ -z "$ROOT_PW" ]]; do
+    ROOT_PW=$(whiptail --title "Root password" --passwordbox \
+      "Enter root password for CT ${CTID} (min 5 chars):" 8 70 3>&1 1>&2 2>&3) \
+      || { ROOT_PW=""; break; }
+    if [[ ${#ROOT_PW} -lt 5 ]]; then
+      whiptail --title "Root password" --msgbox "Password too short (need 5+ chars)." 8 50
+      ROOT_PW=""
+    fi
+  done
+  if [[ -n "$ROOT_PW" ]]; then
+    pct exec "$CTID" -- bash -c "echo 'root:${ROOT_PW}' | chpasswd" \
+      && echo -e "${INFO}${GN} Root password set on CT ${CTID}${CL}"
+  fi
+fi
+
 msg_ok "Completed successfully!\n"
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW} Access it using the following URLs:${CL}"
