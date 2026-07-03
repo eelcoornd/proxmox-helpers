@@ -65,19 +65,22 @@ if whiptail --title "Local LLM endpoint" --yesno \
     "API key (most local servers accept any string):" 8 70 "sk-local" 3>&1 1>&2 2>&3) || LLM_KEY="sk-local"
 
   if [[ -n "$LLM_URL" && -n "$LLM_MODEL" ]]; then
-    pct exec "$CTID" -- sudo -u hermes bash -c "cat > /home/hermes/.hermes/.env" <<EOF
+    pct exec "$CTID" -- bash -c "cat > /home/hermes/.hermes/.env" <<EOF
 # Written by proxmox-helpers/ct/hermes-suite.sh
 # See https://github.com/NousResearch/hermes-agent/blob/main/.env.example for more.
 OPENAI_API_KEY=${LLM_KEY}
 OPENAI_BASE_URL=${LLM_URL}
 EOF
-    pct exec "$CTID" -- sudo -u hermes bash -c "cat > /home/hermes/.hermes/config.yaml" <<EOF
+    pct exec "$CTID" -- bash -c "cat > /home/hermes/.hermes/config.yaml" <<EOF
 # Written by proxmox-helpers/ct/hermes-suite.sh
 model:
   provider: "custom"       # aliases: vllm, ollama, llamacpp
   base_url: "${LLM_URL}"
   default: "${LLM_MODEL}"
 EOF
+    # In-container hermes runs as uid 10000; the host's uid 1000 can't write here.
+    pct exec "$CTID" -- chown 10000:10000 \
+      /home/hermes/.hermes/.env /home/hermes/.hermes/config.yaml
     pct exec "$CTID" -- docker restart hermes-suite >/dev/null 2>&1 \
       && echo -e "${INFO}${GN} Configured local LLM (${LLM_MODEL} @ ${LLM_URL}) and restarted container${CL}"
   fi
