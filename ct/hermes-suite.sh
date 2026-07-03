@@ -21,6 +21,10 @@ header_info "$APP"
 variables
 color
 catch_errors
+# The build.func default is "${APP,,-spaces}-install" = "hermessuite-install".
+# We keep the hyphen in the install script filename for readability.
+# shellcheck disable=SC2034
+var_install="hermes-suite-install"
 
 function update_script() {
   header_info
