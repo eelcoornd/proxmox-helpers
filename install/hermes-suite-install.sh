@@ -13,6 +13,13 @@ setting_up_container
 network_check
 update_os
 
+msg_info "Generating en_US.UTF-8 Locale"
+$STD apt-get install -y locales
+sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+$STD locale-gen en_US.UTF-8
+update-locale LANG=en_US.UTF-8 >/dev/null
+msg_ok "Generated Locale"
+
 msg_info "Installing Dependencies"
 $STD apt-get install -y \
   ca-certificates \
