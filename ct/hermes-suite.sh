@@ -110,6 +110,40 @@ if whiptail --title "Root password" --yesno \
 fi
 
 msg_ok "Completed successfully!\n"
+
+# ------------------------------------------------------------------------------
+# Optional: schedule weekly auto-update via systemd timer.
+# ------------------------------------------------------------------------------
+if whiptail --title "Auto-update" --yesno \
+    "Enable weekly auto-update of Hermes Suite (Sundays 03:00)?\n\nRuns 'git pull && ./up.sh' inside the container." \
+    10 70; then
+  pct exec "$CTID" -- bash -c 'cat > /etc/systemd/system/hermes-update.service' <<'EOF'
+[Unit]
+Description=Update Hermes Suite (repo + docker image)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hermes-update
+EOF
+  pct exec "$CTID" -- bash -c 'cat > /etc/systemd/system/hermes-update.timer' <<'EOF'
+[Unit]
+Description=Weekly Hermes Suite auto-update
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target
+EOF
+  pct exec "$CTID" -- systemctl daemon-reload
+  pct exec "$CTID" -- systemctl enable --now hermes-update.timer >/dev/null 2>&1 \
+    && echo -e "${INFO}${GN} Enabled hermes-update.timer (Sun 03:00)${CL}"
+fi
+
 echo -e "${CREATING}${GN}${APP} setup has been successfully initialized!${CL}"
 echo -e "${INFO}${YW} Access it using the following URLs:${CL}"
 echo -e "${TAB}${BGN}Gateway:    http://${IP}:8642${CL}"

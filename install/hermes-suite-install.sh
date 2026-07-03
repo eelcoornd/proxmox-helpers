@@ -68,6 +68,19 @@ $STD sudo -u hermes -H bash -c '
 '
 msg_ok "Cloned Hermes Suite"
 
+msg_info "Installing update helper"
+cat > /usr/local/bin/hermes-update <<'EOF'
+#!/bin/bash
+# Pull latest hermes-suite repo + docker image, then restart.
+set -e
+cd /home/hermes/hermes-suite
+sudo -u hermes git pull --ff-only
+sudo -u hermes ./down.sh || true
+sudo -u hermes ./up.sh
+EOF
+chmod +x /usr/local/bin/hermes-update
+msg_ok "Installed update helper"
+
 msg_info "Starting Hermes Suite (first image pull can take several minutes)"
 $STD sudo -u hermes -H bash -c 'cd ~/hermes-suite && ./up.sh'
 msg_ok "Started Hermes Suite"
