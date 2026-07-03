@@ -1,9 +1,9 @@
 # proxmox-helpers
 
-Personal Proxmox VE helper scripts. Inspired by
+Personal Proxmox VE helper scripts, built on the
 [community-scripts/ProxmoxVE](https://github.com/community-scripts/ProxmoxVE)
-but kept intentionally small — one self-contained script per app, no framework
-indirection.
+framework (`build.func` / install.func). Each app script re-uses their upstream
+wizard verbatim; only the install script and defaults are ours.
 
 Run every script **as root on the Proxmox VE host** (not inside a container).
 
@@ -12,27 +12,32 @@ Run every script **as root on the Proxmox VE host** (not inside a container).
 ### hermes-suite
 
 Deploys [sunnysktsang/hermes-suite](https://github.com/sunnysktsang/hermes-suite)
-(hermes-agent + hermes-webui + hermes-dashboard) into a new unprivileged
-Debian 13 LXC with Docker.
+(hermes-agent + hermes-webui + hermes-dashboard) into a new Debian 13 LXC with
+Docker.
 
 ```sh
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/eelcoornd/proxmox-helpers/main/ct/hermes-suite.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/eelcoornd/proxmox-helpers/main/ct/hermes-suite.sh)"
 ```
 
-Defaults: CTID = next free, 4 vCPU, 8 GB RAM, 32 GB disk, DHCP on `vmbr0`,
-unprivileged, `nesting=1,keyctl=1` (required for Docker inside LXC).
+You get the standard community-scripts wizard: **Default / Advanced /
+Diagnostic** menus, storage picker, network config, verbose toggle, etc.
 
-Override any default via env vars:
+Defaults: 4 vCPU, 8 GB RAM, 32 GB disk, unprivileged, `nesting=1,keyctl=1`
+(required for Docker inside LXC).
 
-```sh
-CTID=210 HOSTNAME=hermes DISK=64 RAM=16384 CORES=6 BRIDGE=vmbr1 STORAGE=local-zfs \
-  bash -c "$(wget -qLO - https://raw.githubusercontent.com/eelcoornd/proxmox-helpers/main/ct/hermes-suite.sh)"
-```
+Ports exposed: `8642` (gateway), `8787` (webui), `9119` (dashboard). Add API
+keys in `/home/hermes/.hermes/.env` after first boot, then
+`cd ~/hermes-suite && ./up.sh` inside the CT.
 
-Ports exposed by the container: `8642` (gateway), `8787` (webui), `9119`
-(dashboard). Add API keys in `/home/hermes/.hermes/.env` after first boot and
-run `./up.sh` from inside the CT to restart.
+## Framework note
+
+`ct/*.sh` sources `build.func` from community-scripts and rewrites the install
+URL to fetch `install/*-install.sh` from **this** repo. When they update the
+framework, we get it. Header ASCII art still comes from their repo — apps not
+in their catalog print a single "Failed to download header" warning line;
+harmless.
 
 ## License
 
 MIT
+
