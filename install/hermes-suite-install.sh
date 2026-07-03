@@ -15,9 +15,10 @@ update_os
 
 msg_info "Generating en_US.UTF-8 Locale"
 $STD apt-get install -y locales
-sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
-$STD locale-gen en_US.UTF-8
-update-locale LANG=en_US.UTF-8 >/dev/null
+echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+$STD locale-gen
+update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 >/dev/null
+export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 msg_ok "Generated Locale"
 
 msg_info "Installing Dependencies"
