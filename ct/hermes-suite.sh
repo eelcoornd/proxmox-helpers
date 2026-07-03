@@ -50,6 +50,40 @@ build_container
 description
 
 # ------------------------------------------------------------------------------
+# Optional: configure a local vLLM (or any OpenAI-compatible) endpoint.
+# Writes ~/.hermes/.env + ~/.hermes/config.yaml and restarts the container.
+# Skip to configure manually later at /home/hermes/.hermes/{env,config.yaml}.
+# ------------------------------------------------------------------------------
+if whiptail --title "Local LLM endpoint" --yesno \
+    "Configure a local vLLM / OpenAI-compatible endpoint now?\n\nSkip to edit /home/hermes/.hermes/{.env,config.yaml} by hand later." \
+    10 70; then
+  LLM_URL=$(whiptail --title "Local LLM endpoint" --inputbox \
+    "Base URL (must include /v1):" 8 70 "http://192.168.100.1:8000/v1" 3>&1 1>&2 2>&3) || LLM_URL=""
+  LLM_MODEL=$(whiptail --title "Local LLM endpoint" --inputbox \
+    "Model name (as served by your endpoint):" 8 70 "qwen" 3>&1 1>&2 2>&3) || LLM_MODEL=""
+  LLM_KEY=$(whiptail --title "Local LLM endpoint" --inputbox \
+    "API key (most local servers accept any string):" 8 70 "sk-local" 3>&1 1>&2 2>&3) || LLM_KEY="sk-local"
+
+  if [[ -n "$LLM_URL" && -n "$LLM_MODEL" ]]; then
+    pct exec "$CTID" -- sudo -u hermes bash -c "cat > /home/hermes/.hermes/.env" <<EOF
+# Written by proxmox-helpers/ct/hermes-suite.sh
+# See https://github.com/NousResearch/hermes-agent/blob/main/.env.example for more.
+OPENAI_API_KEY=${LLM_KEY}
+OPENAI_BASE_URL=${LLM_URL}
+EOF
+    pct exec "$CTID" -- sudo -u hermes bash -c "cat > /home/hermes/.hermes/config.yaml" <<EOF
+# Written by proxmox-helpers/ct/hermes-suite.sh
+model:
+  provider: "custom"       # aliases: vllm, ollama, llamacpp
+  base_url: "${LLM_URL}"
+  default: "${LLM_MODEL}"
+EOF
+    pct exec "$CTID" -- docker restart hermes-suite >/dev/null 2>&1 \
+      && echo -e "${INFO}${GN} Configured local LLM (${LLM_MODEL} @ ${LLM_URL}) and restarted container${CL}"
+  fi
+fi
+
+# ------------------------------------------------------------------------------
 # Optional: set a root password so console/SSH login works.
 # Default access is via `pct enter $CTID` (no password needed) from the host.
 # ------------------------------------------------------------------------------
